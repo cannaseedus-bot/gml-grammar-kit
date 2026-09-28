@@ -15,6 +15,7 @@ This kit preserves the original KHANARY.CPP paths so the validator and related c
 | `data/manifest/gml.manifest.json` | Manifest entry for the GML grammar surface. |
 | `tools/check_gml_validator.py` | Dependency-free validator/conformance runner. |
 | `tools/conformance_common.py` | Shared conformance verdict helper. |
+| `skills/math-agent/SKILL.md` | Deterministic scalar, vector dot2, and 2x2 matrix skill metadata for grammar/vector consumers. |
 | `src/world/gml_parser.*` | Native parser implementation reference. |
 | `src/world/field_dag.*` | Field DAG overlay/projection reference. |
 | `src/micronaut/relation_isa.*` | Canonical relation authority reference. |
