@@ -1,0 +1,92 @@
+{
+  "gml:loader":        ["main.cpp:7876", "scan:data/*.gml", "auto-loaded-at-startup", "consumer:field_dag.load_gml", "consumer:mcp_server.add_gml", "id-namespace:@node:gml:{stem}:{int_id}"],
+  "gml:grammar":       ["data/grammar/gml.khanary.ebnf", "parser:src/world/gml_parser.cpp"],
+  "gml:validator":     ["data/grammar/gml.validator.json", "version:1.0.0",
+                        "grade:PARSED→VALID→ADMITTED", "law:ParsedGraph≠VerifiedGraph≠B",
+                        "law:infer_relation_from_lexical(x)≠VerifiedRelation(x)",
+                        "law:Representation→Relevance→Candidate→Verification",
+                        "fatal:MISSING_NODE_ID/DUPLICATE_NODE_ID/MISSING_EDGE_ENDPOINT/INVALID_EDGE_ENDPOINT/OVERLAY_ID_COLLISION_INTRA",
+                        "error:CONFIDENCE_OUT_OF_RANGE/STATIC_WEIGHT_OUT_OF_RANGE/HEALTH_OUT_OF_RANGE/COORDINATE_NOT_FINITE",
+                        "warning:NEAR_MISS_VERB/INFER_CANDIDATE_USED/BOTH_VERB_AND_RELATION_PRESENT",
+                        "boundary:VerifiedGraph→Proposal→Ch'en→XCFE→XulGate→B'"],
+
+  "gml:khanary_topology": [
+    "data/khanary_topology.gml",
+    "graph:Q3-hypercube-labelled", "label:KHANARY_TOPOLOGY",
+    "nodes:8", "edges:12", "directed:0",
+    "bit0:analysis-generation", "bit1:active-memory", "bit2:object-meta",
+    "tracks:REASON-µ/CREATE-µ/INFER-µ/ELIZA/TOOL-µ/ORCH-µ/MEM-µ/Coordinator",
+    "purpose:semantic-adjacency-of-core-cognitive-tracks",
+    "verb:@related_to"
+  ],
+
+  "gml:hypercube_q3":  [
+    "data/hypercube_Q3.gml",
+    "graph:Q3-hypercube", "label:Q3",
+    "nodes:8", "edges:12", "directed:0", "regular:3",
+    "vertex-labels:3-bit-binary", "edge-labels:bit0/bit1/bit2",
+    "purpose:3d-geodesic-reference-topology",
+    "verb:@related_to"
+  ],
+
+  "gml:hypercube_q4":  [
+    "data/hypercube_Q4.gml",
+    "graph:Q4-hypercube", "label:Q4",
+    "nodes:16", "edges:32", "directed:0", "regular:4",
+    "vertex-labels:4-bit-binary",
+    "layout:bit0→x, bit1→y, bit2→z, bit3→diagonal-offset",
+    "purpose:4d-geodesic-reference-topology",
+    "verb:@related_to"
+  ],
+
+  "gml:ccc_n3":        [
+    "data/ccc_n3.gml",
+    "graph:CCC3-cube-connected-cycles", "label:CCC3",
+    "nodes:24", "edges:36", "directed:0", "regular:3",
+    "vertex-labels:{3-bit-word}:{cycle-position-0-2}",
+    "edge-types:cycle/xor:bit0/xor:bit1/xor:bit2",
+    "purpose:cubic-interconnect-topology-overlay",
+    "verb:@related_to"
+  ],
+
+  "gml:ccc_n4":        [
+    "data/ccc_n4.gml",
+    "graph:CCC4-cube-connected-cycles", "label:CCC4",
+    "nodes:64", "edges:96", "directed:0", "regular:3",
+    "vertex-labels:{4-bit-word}:{cycle-position-0-3}",
+    "edge-types:cycle/xor",
+    "purpose:higher-order-cubic-interconnect-topology-overlay",
+    "verb:@related_to"
+  ],
+
+  "gml:sample":        [
+    "data/sample.gml",
+    "graph:directed-3-cycle", "label:Hello-I-am-a-graph",
+    "nodes:3", "edges:3", "directed:1",
+    "purpose:parser-smoke-test",
+    "verb:@delegates_to",
+    "note:thisIsASampleAttribute demonstrates unknown-key passthrough"
+  ],
+
+  "abi:projection_v1": [
+    "data/projection_abi_v1.json",
+    "schema:⟁PROJECTION_ABI_v1",
+    "loaded-as:cfg.proj_book", "default-path:data/projection_abi_v1.json", "cli:--proj-book",
+    "dimensions:⟁FIELD/⟁EVIDENCE/⟁INFER/⟁COUNTEREXAMPLE/⟁VERIFY/⟁XUL",
+    "targets:chat/code/patch/kuhul",
+    "thinking-levels:low/medium/high",
+    "purpose:contract-for-project_v()-neural-boundary-crossing",
+    "note:project_v() implements this Book; it does not define it"
+  ],
+
+  "abi:gyro_v1":       [
+    "data/gyro_abi_v1.json",
+    "schema:⟁GYRO_ABI_v1", "revision:v1.1",
+    "loaded-as:cfg.gyro_book", "default-path:data/gyro_abi_v1.json", "cli:--gyro-book",
+    "dimensions:⟁FIELD/⟁EVIDENCE/⟁INFER/⟁COUNTEREXAMPLE/⟁VERIFY/⟁XUL",
+    "measurement-tracks:REASON-µ/INFER-µ/ORCH-µ/MEM-µ/CREATE-µ/ELIZA",
+    "purpose:gyroscope-ABI-µtrack-to-epistemic-coordinate-map",
+    "synonym-credit:0.65",
+    "note:structural-ABI-6x6-unchanged-in-v1.1; ELIZA-governs-extended-for-greeting-learning"
+  ]
+}

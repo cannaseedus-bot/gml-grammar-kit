@@ -1,0 +1,231 @@
+{
+  "id":      "gml.validator.v1",
+  "kind":    "gml_semantic_validator",
+  "version": "1.0.0",
+
+  "classification": {
+    "gml_is":     "serialization/projection of graph structure",
+    "gml_is_not": "B itself",
+    "law":        "ParsedGraph ≠ VerifiedGraph ≠ B"
+  },
+
+  "pipeline": [
+    { "stage": "ParseGML",    "input": "GML text",      "output": "ParsedGraph",   "gate": "gml.khanary.ebnf — permissive, lenient parser" },
+    { "stage": "ValidateGML", "input": "ParsedGraph",   "output": "VerifiedGraph", "gate": "this contract — semantic checks; grade VALID required" },
+    { "stage": "Proposal",    "input": "VerifiedGraph", "output": "Candidate",     "gate": "field_dag: build FieldNodes + overlay IDs" },
+    { "stage": "Ch'en",       "input": "Candidate",     "output": "Certificate",   "gate": "assert_and_verify_candidate" },
+    { "stage": "XCFE",        "input": "Certificate",   "output": "Authorization", "gate": "dispatch authority check" },
+    { "stage": "XulGate",     "input": "Authorization", "output": "B'",            "gate": "compare_and_commit — only topology mutation" }
+  ],
+
+  "admission_boundary": {
+    "rule":        "A VerifiedGraph does not automatically update B. Grade VALID is a necessary but not sufficient condition for topology admission.",
+    "path":        "Proposal → Ch'en → XCFE → XulGate → B'",
+    "gate":        "existing CommitAuthority / XulGate commit path in src/kuhul/xul_gate.h",
+    "corollary":   "Importing a GML file at startup (field_dag.load_gml) populates the in-memory overlay; persisting that to B requires an explicit Xul commit."
+  },
+
+  "validation_checks": {
+
+    "V1": {
+      "layer":     "structural",
+      "name":      "node_id_required",
+      "formal":    "NodeValid(n) ⟹ ∃!id(n)",
+      "check":     "Every node block must contain exactly one 'id' attribute. Zero → MISSING_NODE_ID. Two or more → DUPLICATE_NODE_ID.",
+      "severity":  "FATAL",
+      "error":     ["MISSING_NODE_ID", "DUPLICATE_NODE_ID"]
+    },
+
+    "V2": {
+      "layer":     "structural",
+      "name":      "edge_endpoints_required",
+      "formal":    "EdgeValid(e) ⟹ source(e) ∧ target(e)",
+      "check":     "Every edge block must contain exactly one 'source' and exactly one 'target'. Missing either → MISSING_EDGE_ENDPOINT.",
+      "severity":  "FATAL",
+      "error":     "MISSING_EDGE_ENDPOINT"
+    },
+
+    "V3": {
+      "layer":     "structural",
+      "name":      "edge_endpoints_resolve",
+      "check":     "source(e) and target(e) must be integer IDs that exist in the node table of this graph.",
+      "severity":  "FATAL",
+      "error":     "INVALID_EDGE_ENDPOINT"
+    },
+
+    "V4": {
+      "layer":     "structural",
+      "name":      "overlay_id_unique_within_file",
+      "check":     "Within a single GML file, every node must have a unique integer id. Duplicate integers → OVERLAY_ID_COLLISION_INTRA.",
+      "severity":  "FATAL",
+      "error":     "OVERLAY_ID_COLLISION_INTRA",
+      "note":      "Cross-file uniqueness is guaranteed by the file-stem namespace @node:gml:{stem}:{id}. field_dag.cpp:29 enforces this. This check validates the intra-file half."
+    },
+
+    "V5": {
+      "layer":     "structural",
+      "name":      "stem_ident_safe",
+      "check":     "The file stem derived from the GML filename (lowercase, non-alnum → '_') must not start with a digit. A filename like '123.gml' produces stem '123', which is not a valid ident. Prepend '_' to produce '_123' to form a valid overlay ID prefix.",
+      "severity":  "ERROR",
+      "error":     "STEM_STARTS_WITH_DIGIT",
+      "note":      "gml_overlay_id = '@node:gml:' + file_stem + ':' + integer. file_stem is declared as ident in the EBNF. Stems beginning with a digit break the ident production. The validator normalises the stem rather than rejecting the file."
+    },
+
+    "R1": {
+      "layer":     "relation",
+      "name":      "verb_wins",
+      "formal":    "verb present ⟹ verb wins; relation attribute ignored",
+      "check":     "When both 'verb' and 'relation' are present on an edge, 'verb' takes precedence. 'relation' is silently dropped. Emit warning BOTH_VERB_AND_RELATION_PRESENT.",
+      "severity":  "WARNING",
+      "error":     "BOTH_VERB_AND_RELATION_PRESENT"
+    },
+
+    "R2": {
+      "layer":     "relation",
+      "name":      "relation_is_candidate",
+      "formal":    "¬verb ∧ relation present ⟹ relation becomes RelationCandidate (not VerifiedRelation)",
+      "check":     "When only 'relation' is present, its value feeds infer_relation_from_lexical(). The result is a RelationCandidate, not a VerifiedRelation. Emit RELATION_ALIAS_USED.",
+      "severity":  "WARNING",
+      "error":     "RELATION_ALIAS_USED"
+    },
+
+    "R3": {
+      "layer":     "relation",
+      "name":      "default_weak_association",
+      "check":     "When neither 'verb' nor 'relation' is present, the edge receives @related_to as weak association default.",
+      "severity":  "INFO",
+      "error":     "NONE"
+    },
+
+    "R4": {
+      "layer":     "relation",
+      "name":      "non_canonical_verb_is_candidate",
+      "formal":    "verb ∉ relation_isa.canonical ⟹ infer_relation_from_lexical(verb) → RelationCandidate",
+      "check":     "If 'verb' value is not in the canonical set defined in src/micronaut/relation_isa.h, the verb is treated as a string literal passed to infer_relation_from_lexical(). The result is a RelationCandidate, not a VerifiedRelation. Emit INFER_CANDIDATE_USED.",
+      "severity":  "WARNING",
+      "error":     "INFER_CANDIDATE_USED"
+    },
+
+    "R5": {
+      "layer":     "relation",
+      "name":      "near_miss_verb_is_not_canonical",
+      "formal":    "infer_relation_from_lexical(x) ≠ VerifiedRelation(x)",
+      "check":     "A verb that is lexically similar to a canonical verb (e.g. '@relateed_to' ~ '@related_to') is a RelationCandidate with a lower confidence score — it is NOT equivalent to the canonical verb. The validator emits NEAR_MISS_VERB alongside INFER_CANDIDATE_USED. Confidence of the inferred candidate must not be promoted to 1.0.",
+      "severity":  "WARNING",
+      "error":     "NEAR_MISS_VERB",
+      "law":       "Representation → Relevance → Candidate → Verification, not → Truth"
+    },
+
+    "W1": {
+      "layer":     "wcr",
+      "name":      "confidence_range",
+      "check":     "confidence ∈ [0.0, 1.0] when present",
+      "severity":  "ERROR",
+      "error":     "CONFIDENCE_OUT_OF_RANGE"
+    },
+
+    "W2": {
+      "layer":     "wcr",
+      "name":      "static_weight_range",
+      "check":     "static_weight ∈ [0.0, 1.0] when present",
+      "severity":  "ERROR",
+      "error":     "STATIC_WEIGHT_OUT_OF_RANGE"
+    },
+
+    "W3": {
+      "layer":     "wcr",
+      "name":      "health_range",
+      "check":     "health ∈ [0.0, 1.0] when present",
+      "severity":  "ERROR",
+      "error":     "HEALTH_OUT_OF_RANGE"
+    },
+
+    "W4": {
+      "layer":     "wcr",
+      "name":      "edge_weight_range",
+      "check":     "edge weight ∈ [0.0, 1.0] when present",
+      "severity":  "ERROR",
+      "error":     "EDGE_WEIGHT_OUT_OF_RANGE"
+    },
+
+    "G1": {
+      "layer":     "geometry",
+      "name":      "coordinates_finite",
+      "check":     "x, y, z must be finite IEEE-754 floats. NaN and Inf are rejected.",
+      "severity":  "ERROR",
+      "error":     "COORDINATE_NOT_FINITE"
+    },
+
+    "G2": {
+      "layer":     "geometry",
+      "name":      "coordinate_vector_complete",
+      "check":     "If any of x/y/z is present, all three should be present. A partial vector (e.g. only x, y) gets a default of 0.0 for the missing component with a warning.",
+      "severity":  "WARNING",
+      "error":     "PARTIAL_COORDINATE_VECTOR"
+    }
+  },
+
+  "relation_authority": {
+    "VerifiedRelation": {
+      "definition": "Canonical verb, exact case-sensitive string match against src/micronaut/relation_isa.h",
+      "confidence": 1.0,
+      "path":       "direct match — no inference required"
+    },
+    "RelationCandidate": {
+      "definition": "Output of infer_relation_from_lexical() or 'relation' alias. Must pass Ch'en verification before use in B.",
+      "confidence": "< 1.0; assigned by infer_relation_from_lexical() based on lexical similarity",
+      "path":       "Candidate → Ch'en → Xul before B update"
+    },
+    "law":       "Representation → Relevance → Candidate → Verification — not → Truth",
+    "corollary": "A near-miss verb is a RelationCandidate with reduced confidence, not a VerifiedRelation with a typo. No silent promotion."
+  },
+
+  "error_taxonomy": {
+    "FATAL":   ["MISSING_NODE_ID", "DUPLICATE_NODE_ID", "MISSING_EDGE_ENDPOINT", "INVALID_EDGE_ENDPOINT", "OVERLAY_ID_COLLISION_INTRA"],
+    "ERROR":   ["CONFIDENCE_OUT_OF_RANGE", "STATIC_WEIGHT_OUT_OF_RANGE", "HEALTH_OUT_OF_RANGE", "EDGE_WEIGHT_OUT_OF_RANGE", "COORDINATE_NOT_FINITE", "STEM_STARTS_WITH_DIGIT"],
+    "WARNING": ["BOTH_VERB_AND_RELATION_PRESENT", "RELATION_ALIAS_USED", "INFER_CANDIDATE_USED", "NEAR_MISS_VERB", "PARTIAL_COORDINATE_VECTOR"],
+    "INFO":    ["UNKNOWN_ATTRIBUTE_SKIPPED"]
+  },
+
+  "grade": {
+    "PARSED":   "Syntactically valid per gml.khanary.ebnf. ParsedGraph produced. No semantic guarantees.",
+    "VALID":    "All FATAL and ERROR checks pass. VerifiedGraph produced. WARNINGs permitted.",
+    "ADMITTED": "VerifiedGraph accepted into B' via Proposal → Ch'en → XCFE → XulGate. This grade is assigned by the Xul commit path, not by this validator."
+  },
+
+  "ebnf_observations": {
+    "id_required_not_in_syntax": {
+      "observation": "node 'id' and edge 'source'/'target' are described as required in comments but not enforced by the EBNF (zero-or-more node_attr).",
+      "resolution":  "Semantic validator checks V1, V2, V3. Grammar remains permissive for ingestion; the validator enforces semantic requirements. No EBNF change needed."
+    },
+    "verb_relation_precedence": {
+      "observation": "The 'verb wins over relation' rule is semantic, not in the EBNF.",
+      "resolution":  "Checks R1, R2 enforce this at the validator layer."
+    },
+    "relation_verb_catch_all": {
+      "observation": "relation_verb production includes a string catch-all, so @relateed_to parses cleanly and reaches infer_relation_from_lexical().",
+      "resolution":  "Checks R4, R5 classify the result as RelationCandidate with reduced confidence. relation_authority law prevents silent promotion to VerifiedRelation."
+    },
+    "file_stem_digit_prefix": {
+      "observation": "file_stem is declared as ident in the EBNF (requires letter or underscore prefix), but the derivation rule allows stems starting with a digit (e.g. filename '123.gml' → stem '123').",
+      "resolution":  "Check V5 normalises the stem by prepending '_' and emits STEM_STARTS_WITH_DIGIT. Overlay IDs remain valid idents after normalisation."
+    },
+    "float_1_dot": {
+      "observation": "The float production allows '1.' (digits + dot + zero fractional digits) via zero-or-more { digit }.",
+      "resolution":  "Accepted as valid. No validator action required. Parser must handle it."
+    },
+    "escape_seq_passthrough": {
+      "observation": "Unknown escape sequences (e.g. \\q) are passed through literally — the prose is ambiguous about whether the backslash is retained.",
+      "resolution":  "Parser-layer concern, not validator-layer. Validator receives parsed string values; the escape handling is completed before validation runs."
+    }
+  },
+
+  "related": [
+    "data/grammar/gml.khanary.ebnf",
+    "data/grammar/fold_graph.xml",
+    "data/manifest/gml.manifest.json",
+    "src/world/gml_parser.cpp",
+    "src/world/field_dag.cpp",
+    "src/micronaut/relation_isa.h"
+  ]
+}

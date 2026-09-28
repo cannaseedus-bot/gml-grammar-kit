@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       vectors.mml
+       Fold Graph — bidirectional co-occurrence provider.
+
+       Semantic contract:   FoldPair(S) = <M_{Y,X}, C_{Y,X}^T>
+                            with shared semantic axis X.
+
+       Physical lowering:   [ M ; C^T ]   (optional, backend-chosen)
+
+       NOTATION DISAMBIGUATION:
+         M_{Y,X}   co-occurrence/association mass — accumulated counts.
+                   This is the forward matrix produced by Direction A.
+                   M feeds semantic representation construction.
+         C_{Y,X}   reverse/context accumulation matrix (Direction B).
+                   C_X (single subscript) = context neighborhood at X.
+         W_Y       runtime selection weight (static_weight in WCR).
+                   W_Y is NOT a co-occurrence count.  It is the
+                   multiplicative prior in S = W * C * R * G.
+
+         M and W must not be conflated.  They feed different stages:
+           M_{Y,X} → representation → R_Y(Q)
+           W_Y, C_Y → candidate qualification
+         They meet only in S_Y = W_Y * C_Y * R_Y.
+
+       Content dictionary:  urn:kuhul:fold-graph:v1
+       CD declaration:      data/grammar/fold.cd.xml
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── Contract ──────────────────────────────────────────────────── -->
+  <semantics>
+
+    <mrow>
+      <mi>FoldPair</mi>
+      <mo>(</mo>
+      <mi>S</mi>
+      <mo>)</mo>
+      <mo>=</mo>
+      <mo>&#x27E8;</mo>
+      <msub><mi>M</mi><mrow><mi>Y</mi><mo>,</mo><mi>X</mi></mrow></msub>
+      <mo>,</mo>
+      <msubsup><mi>C</mi><mrow><mi>Y</mi><mo>,</mo><mi>X</mi></mrow><mi>T</mi></msubsup>
+      <mo>&#x27E9;</mo>
+    </mrow>
+
+    <annotation-xml encoding="MathML-Content">
+      <apply>
+        <csymbol cd="urn:kuhul:fold-graph:v1">FoldPair</csymbol>
+        <ci>S</ci>
+        <list>
+          <apply><selector/><ci>M</ci><ci>Y</ci><ci>X</ci></apply>
+          <apply><transpose/><apply><selector/><ci>C</ci><ci>Y</ci><ci>X</ci></apply></apply>
+        </list>
+      </apply>
+    </annotation-xml>
+
+    <annotation encoding="text/plain">
+FoldPair(S) = &lt; M[Y,X], C[Y,X]^T &gt;
+shared semantic axis: X
+M = co-occurrence mass (forward);  C^T = context accumulation (reverse)
+M != W_Y (runtime selection weight)
+cd: urn:kuhul:fold-graph:v1
+    </annotation>
+
+  </semantics>
+
+  <mspace linebreak="newline" indentalign="center"/>
+
+  <!-- ── Direction A — membership (forward) ────────────────────────── -->
+  <semantics>
+
+    <mrow>
+      <mo>&#x2200;</mo>
+      <mi>X</mi>
+      <mo>&#x2208;</mo>
+      <mi>S</mi>
+      <mo>:</mo>
+      <mspace width="0.5em"/>
+      <msub><mi>M</mi><mrow><mi>Y</mi><mo>,</mo><mi>X</mi></mrow></msub>
+      <mo>&#x2190;</mo>
+      <msub><mi>M</mi><mrow><mi>Y</mi><mo>,</mo><mi>X</mi></mrow></msub>
+      <mo>+</mo>
+      <mrow>
+        <mo>{</mo>
+        <mtable columnalign="left left">
+          <mtr>
+            <mtd><mn>1</mn></mtd>
+            <mtd>
+              <mtext>if&#xA0;</mtext>
+              <mi>Y</mi>
+              <mo>&#x2208;</mo>
+              <msub><mi>C</mi><mi>X</mi></msub>
+            </mtd>
+          </mtr>
+          <mtr>
+            <mtd><mn>0</mn></mtd>
+            <mtd><mtext>otherwise</mtext></mtd>
+          </mtr>
+        </mtable>
+      </mrow>
+    </mrow>
+
+    <annotation-xml encoding="MathML-Content">
+      <apply>
+        <forall/>
+        <bvar><ci>X</ci></bvar>
+        <condition><apply><in/><ci>X</ci><ci>S</ci></apply></condition>
+        <apply>
+          <assign/>
+          <apply><selector/><ci>M</ci><ci>Y</ci><ci>X</ci></apply>
+          <apply>
+            <plus/>
+            <apply><selector/><ci>M</ci><ci>Y</ci><ci>X</ci></apply>
+            <piecewise>
+              <piece>
+                <cn>1</cn>
+                <apply>
+                  <in/>
+                  <ci>Y</ci>
+                  <apply><selector/><ci>C</ci><ci>X</ci></apply>
+                </apply>
+              </piece>
+              <otherwise><cn>0</cn></otherwise>
+            </piecewise>
+          </apply>
+        </apply>
+      </apply>
+    </annotation-xml>
+
+    <annotation encoding="text/plain">
+for each X in S:
+    if Y in C[X]:
+        M[Y][X] += 1   # co-occurrence mass; not the WCR W
+    else:
+        M[Y][X] += 0
+# membership: A asks whether Y is in the neighborhood at X
+    </annotation>
+
+  </semantics>
+
+  <mspace linebreak="newline" indentalign="center"/>
+
+  <!-- ── Direction B — traversal (reverse / context) ───────────────── -->
+  <semantics>
+
+    <mrow>
+      <mo>&#x2200;</mo>
+      <mi>X</mi>
+      <mo>&#x2208;</mo>
+      <mi>S</mi>
+      <mo>,</mo>
+      <mspace width="0.25em"/>
+      <mo>&#x2200;</mo>
+      <mi>Y</mi>
+      <mo>&#x2208;</mo>
+      <msub><mi>C</mi><mi>X</mi></msub>
+      <mo>:</mo>
+      <mspace width="0.5em"/>
+      <msub><mi>C</mi><mrow><mi>Y</mi><mo>,</mo><mi>X</mi></mrow></msub>
+      <mo>&#x2190;</mo>
+      <msub><mi>C</mi><mrow><mi>Y</mi><mo>,</mo><mi>X</mi></mrow></msub>
+      <mo>+</mo>
+      <mn>1</mn>
+    </mrow>
+
+    <annotation-xml encoding="MathML-Content">
+      <apply>
+        <forall/>
+        <bvar><ci>X</ci></bvar>
+        <condition><apply><in/><ci>X</ci><ci>S</ci></apply></condition>
+        <apply>
+          <forall/>
+          <bvar><ci>Y</ci></bvar>
+          <condition>
+            <apply>
+              <in/>
+              <ci>Y</ci>
+              <apply><selector/><ci>C</ci><ci>X</ci></apply>
+            </apply>
+          </condition>
+          <apply>
+            <assign/>
+            <apply><selector/><ci>C</ci><ci>Y</ci><ci>X</ci></apply>
+            <apply>
+              <plus/>
+              <apply><selector/><ci>C</ci><ci>Y</ci><ci>X</ci></apply>
+              <cn>1</cn>
+            </apply>
+          </apply>
+        </apply>
+      </apply>
+    </annotation-xml>
+
+    <annotation encoding="text/plain">
+for each X in S:
+    for each Y in C[X]:
+        C[Y][X] += 1
+# traversal: B walks the neighborhood rather than testing membership
+    </annotation>
+
+  </semantics>
+
+  <!-- ── Notes ─────────────────────────────────────────────────────────
+       • M_{Y,X} (forward matrix)   = co-occurrence/association mass.
+         M_{Y,X} += 1 each time Y appears in the context neighborhood C_X.
+         M is NOT the WCR static_weight W.  Conflating them hides the
+         two-stage pipeline:
+             M_{Y,X} -> representation -> R_Y(Q)      [evidence stage]
+             W_Y, C_Y -> candidate qualification      [selection stage]
+         They meet only in S_Y = W_Y * C_Y * R_Y.
+
+       • C_X  (capital, single subscript)  = context neighborhood at X.
+       • C_{Y,X} (capital, paired subscripts) = accumulated reverse matrix.
+
+       • FoldPair returns the logical pair <M, C^T>. Physical backends
+         may lower this to [M; C^T] if their storage requires it.
+
+       • Direction A asks membership; Direction B traverses membership.
+         The asymmetry is intentional and informative.
+
+       • Pattern count invariant (no-pattern-inflation):
+           |supp M[Y,·]| = #{X ∈ S : Y ∈ C_X}
+         FoldPair expands operator surface (forward + reverse readouts),
+         not pattern vocabulary. |X| is fixed by the semantic map.
+       ═══════════════════════════════════════════════════════════════ -->
+
+</math>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fold-graph xmlns="urn:kuhul:fold-graph:v1" version="1.0.0"
+            topology-symbol="B" cycle="Pop Wo Yax Sek Ch'en Xul">
+  <!-- B -> Unfold(Q) -> F_Q -> Attention/WCR -> F*_Q -> Fold(Pi) -> C_Q -->
+
+  <laws>
+    <law id="fold-not-xul">Fold != Xul</law>
+    <law id="unfold-expands">Unfold expands an addressed semantic neighborhood into an active field.</law>
+    <law id="attention-selects">Attention selects relevance within the active field.</law>
+    <law id="fold-bounds">Fold produces a canonical bounded projection under a preservation contract.</law>
+    <law id="fold-idempotence">Fold_Pi(Fold_Pi(F)) = Fold_Pi(F)</law>
+    <law id="topology-preservation">Semantic Fold/Unfold preserves B.</law>
+    <law id="xul-only-commit">B_next != B implies verified and authorized Xul commit.</law>
+    <law id="usage-not-confidence">Usage/retrieval frequency does not imply epistemic confidence.</law>
+    <law id="score-not-authority">Semantic score cannot manufacture legality or commit authority.</law>
+    <law id="fold-is-semantic-reduction">Fold is semantic reduction, not an encoding format.</law>
+    <law id="representation-is-provider">Vector, SDR, graph, and SCX are Fold representations/providers; none is the semantic model.</law>
+    <law id="representation-proposes-relevance">Representation proposes relevance; topology preserves meaning; Ch'en verifies; Xul commits.</law>
+    <law id="representation-not-truth">Representation → Relevance → Candidate → Verification. Not: Representation → Truth.</law>
+    <law id="sdr-candidate-not-meaning">SDR AND+popcount produces a CandidateSet, not meaning and not truth. Typed neighborhood recovery requires Unfold.</law>
+    <law id="sublinear-from-index">Sublinear retrieval comes from index structure and search strategy, not from the encoding format alone.</law>
+    <law id="cooccurrence-mass-not-selection-weight">M_{Y,X} is co-occurrence/association mass (accumulated membership counts). W_Y is the runtime selection prior (static_weight in WCR). They are distinct: M feeds representation construction → R_Y; W biases candidate qualification alongside C_Y.</law>
+    <law id="multiplicative-score-no-false-relevance">R=0 implies S=0. The selection weight W_Y cannot create relevance where the relevance provider found none. S = W*C*R*G is multiplicative, not additive.</law>
+    <law id="legality-gate-is-not-score">W=1 AND C=1 AND R=1 does NOT imply Admit. The legality gate (capable AND policy_ok AND xcfe_ok) is independent of semantic score. Score measures fit; legality measures authority.</law>
+    <law id="generated-episode-not-training-episode">GeneratedEpisode != TrainingEpisode. A response is not a training example until Ch'en or feedback provides a verdict. Training path: GeneratedEpisode → Verdict(GOOD/BAD/UNKNOWN) → VerifiedEpisode → DatasetProjection → TrainingExample.</law>
+    <law id="confidence-from-evidence">C ← f(Evidence), not f(Usage). Retrieval frequency does not imply epistemic confidence. See also: usage-not-confidence.</law>
+    <law id="journal-is-direction-library">The episode journal is a direction library, not a replay buffer. Each GOOD episode E_i^GOOD contributes ΔF_i = ⟨ΔM_i, ΔRelations_i, ΔW_i, ΔC_i⟩. The library grows monotonically from the journal. GOOD verdict gates contribution; BAD episodes are excluded. Representation change (vector→SDR) means re-project from J_GOOD, not re-collect experiences.</law>
+    <law id="fold-delta-composition">ΔF = ⟨ΔM_{Y,X}, ΔRelations, ΔW, ΔC⟩ is the semantic displacement from a verified episode. The four dataset projections (cooccurrence/relation/WCR/confidence) are four views of the same ΔF, not independent datasets. FoldDirection_i = ⟨ΔF_i, K_i, W_i, C_i, Evidence_i, Provenance_i⟩.</law>
+    <law id="fold-delta-not-vec-delta">ΔF ≠ vec(ΔF). The structured displacement is authoritative. A vector/SDR/SCX projection is a retrieval representation of the displacement, not the displacement itself. Exactly as Fold ≠ Vector. PrincipalDirection is provider-agnostic: PCA(vec(ΔF_i)) for vector, Consensus(ΔF_i) for graph, BitConsensus(SDR(ΔF_i)) for SDR.</law>
+    <law id="apply-field-not-commit-topology">Apply direction to Field ≠ commit direction to Topology. F_Q + α*ΔF_i → F_Q' is a reversible fold-space transformation at inference time. B + ΔF_i → B' requires the full authority path: Proposal → Ch'en → XCFE → XulGate → B'. A retrieved direction can steer semantic computation without mutating the permanent graph.</law>
+  </laws>
+
+  <topology id="B">
+    <component symbol="V" meaning="nodes"/>
+    <component symbol="E" meaning="typed relations"/>
+    <component symbol="A" meaning="attributes"/>
+    <component symbol="W" meaning="weights"/>
+    <component symbol="S" meaning="persistent semantic state"/>
+  </topology>
+
+  <unfold query="Q" source="B" result="F_Q" parser="fold_graph_parse">
+    <output name="atoms" role="resolved semantic atoms"/>
+    <output name="relations" role="typed semantic relations"/>
+    <output name="books" role="semantic neighborhoods"/>
+    <output name="candidates" role="near or eligible semantic candidates"/>
+    <output name="unresolved" role="unresolved field items; not automatically mutation requirements"/>
+  </unfold>
+
+  <field id="F_Q" state="unfolded">
+    <semantic-record id="gram_i">
+      <vector name="V_i" kind="semantic-geodesic">
+        <component name="x"/><component name="y"/><component name="z"/>
+      </vector>
+      <wcr note="R is provider-dependent; W and C and all downstream geometry are provider-independent">
+        <weight symbol="W_i"/>
+        <confidence symbol="C_i"/>
+        <relevance symbol="R_i" note="supplied by active Fold provider: cosine | overlap | graph | SCX"/>
+        <base-score symbol="S_i" formula="W_i * C_i * R_i"/>
+      </wcr>
+      <geometry>
+        <fold-weight formula="magnitude(V_i)"/>
+        <relation-weight formula="sqrt(x*x + y*y) / magnitude(V_i)"/>
+        <phase-weight formula="0.5 + 0.5 * (z / magnitude(V_i))"/>
+        <semantic-score formula="S_i * lerp(1, relation_weight * fold_weight * phase_weight, relation_mix)"/>
+      </geometry>
+      <legality formula="policy_ok AND capable AND xcfe_ok">
+        <gate name="policy_ok"/><gate name="capable"/><gate name="xcfe_ok"/>
+      </legality>
+      <admission phase="Yax" formula="legal AND semantic_score &gt;= admission_threshold"/>
+    </semantic-record>
+  </field>
+
+  <relevance-providers>
+    <!-- R is provider-dependent; WCR(S=W*C*R) and all downstream geometry remain provider-independent -->
+    <provider id="vector-cosine"    formula="R_i = cos(Q, K_i)"             note="alignment in embedding space"/>
+    <provider id="sdr-overlap"      formula="R_i = overlap(Q, K_i)"         note="popcount(A AND B) / popcount(A OR B)"/>
+    <provider id="graph-similarity" formula="R_i = GraphSimilarity(Q, K_i)" note="structural neighborhood overlap"/>
+    <provider id="scx-similarity"   formula="R_i = SCXSimilarity(Q, K_i)"   note="SCX bounded representation similarity"/>
+  </relevance-providers>
+
+  <gpu target="D3D11" shader-model="cs_5_0">
+    <semantic-attention shader="data/shaders/attention.hlsl" threads="64,1,1"
+                        record-stride-bytes="48" score-law="S=W*C*R"/>
+    <fold-compute shader="data/shaders/fold_compute.hlsl" threads="64,1,1"
+                  formula="result = arc_weight * (a + b)"/>
+  </gpu>
+
+  <fold id="semantic-fold" input="F_Q" output="C_Q" state="folded">
+    <preservation-contract symbol="Pi">
+      <requirement>preserve query-relevant semantic identity</requirement>
+      <requirement>preserve typed relations required by the active operation</requirement>
+      <requirement>preserve evidence provenance required for verification</requirement>
+      <requirement>do not mutate B</requirement>
+    </preservation-contract>
+    <providers>
+      <provider id="graph"  result="bounded semantic graph"/>
+      <provider id="vector" result="bounded semantic vector field"/>
+      <provider id="sdr"    result="sparse binary semantic fingerprint">
+        <!-- SDR is a fast-path candidate retrieval optimization, not the semantic model.
+             Pattern: SDR(Q) →AND+popcount→ CandidateSet{k7,k19,k42}
+                      →Unfold(CandidateSet, B)→ F_Q (typed neighborhood recovered).
+             SDR produces CandidateSet only; meaning and relations come from Unfold. -->
+      </provider>
+      <provider id="scx"    result="SCX bounded representation"/>
+      <provider id="stacked-cooccurrence" kind="bidirectional" result="logical-pair">
+        <!-- FoldPair(S) = <M_{Y,X}, C_{Y,X}^T>  — semantic contract only.
+             M_{Y,X} = co-occurrence/association mass (forward).  NOT the WCR W_i.
+             Physical lowering to [M; C^T] is optional and backend-chosen.
+             Direction A asks membership; Direction B traverses membership.
+             Both share semantic axis X; |supp M[Y,·]| is fixed by |S|.
+             No pattern inflation: FoldPair expands operator surface, not |X|. -->
+        <forward  matrix="M" axis="Y,X" semantics="membership"/>
+        <reverse  matrix="C" axis="Y,X" semantics="traversal"/>
+        <shared-axis name="X" set="S"/>
+        <pair notation="&lt;M,C^T&gt;" cd="urn:kuhul:fold-graph:v1" symbol="FoldPair"/>
+        <contract ref="data/grammar/vectors.mml"/>
+        <cd-declaration ref="data/grammar/fold.cd.xml"/>
+      </provider>
+    </providers>
+  </fold>
+
+  <lfm role="context-layer">
+    <operation>Invoke-LfmUnfoldSummary</operation>
+    <input source="fold_graph_parse">
+      <item name="atoms"/><item name="candidates"/><item name="unresolved"/>
+    </input>
+    <output>
+      <item name="summary"/><item name="known"/><item name="uncertain"/>
+      <item name="unresolved"/>
+      <item name="gap-question" constraint="one question that would close the main gap"/>
+    </output>
+    <constraint>LFM may explain F_Q; it may not enlarge authoritative F_Q.</constraint>
+  </lfm>
+
+  <advisor role="answer-and-evolution-layer">
+    <ordinary-miss operation="Invoke-AdvisorQuery" input="lfm.gap-question"/>
+    <pending-advisor-verify operation="Invoke-AdvisorEvolveQuery"
+                            result="structural-delta-proposal"/>
+  </advisor>
+
+  <mutation-path>
+    <proposal source="Advisor"/>
+    <verify phase="Ch'en"/>
+    <authorize authority="XCFE"/>
+    <commit phase="Xul" gate="XulGate"/>
+    <persist target="B"/>
+  </mutation-path>
+
+  <response-collapse>
+    <part source="LFM" role="knowledge-status"/>
+    <part source="Advisor" role="answer-or-learning"/>
+    <join separator="\n\n"/>
+    <emit target="WPF" count="1"/>
+  </response-collapse>
+
+  <learning-invariant>
+    Unresolved_t(x) AND VerifiedLearning(x) implies Resolved_t+n(x)
+  </learning-invariant>
+</fold-graph>

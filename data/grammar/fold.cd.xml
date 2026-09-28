@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  fold.cd.xml  —  OpenMath-style Content Dictionary for the Fold Graph
+  namespace:  urn:kuhul:fold-graph:v1
+  version:    1.0.0
+
+  Declares the symbols used in vectors.mml and any future MathML that
+  references cd="urn:kuhul:fold-graph:v1".
+
+  Structure follows OpenMath CD conventions (symbols, descriptions,
+  formal properties) without requiring a full OM registry lookup. Any
+  XML validator that resolves the cd attribute to this file can verify
+  that the symbol names used in Content MathML are declared here.
+-->
+<CD xmlns="http://www.openmath.org/OpenMathCD"
+    xmlns:kfg="urn:kuhul:fold-graph:v1">
+
+  <CDName>fold</CDName>
+  <CDURI>urn:kuhul:fold-graph:v1</CDURI>
+  <CDDate>2026-09-27</CDDate>
+  <CDVersion>1</CDVersion>
+  <CDRevision>0</CDRevision>
+  <CDStatus>official</CDStatus>
+  <CDComment>
+    Content Dictionary for the K'UHUL Fold Graph semantic contract.
+    Defines FoldPair and its structural constraints as formalised in
+    vectors.mml and fold_graph.xml.
+
+    Key invariant (no-pattern-inflation):
+      |supp M[Y,·]| = #{X ∈ S : Y ∈ C_X}
+    FoldPair increases operator surface; it does not increase |X|.
+
+    Notation: M_{Y,X} = co-occurrence/association mass (forward matrix).
+    Do not conflate with W_Y = runtime selection weight (static_weight in WCR).
+    M and W are distinct; they feed different pipeline stages.
+  </CDComment>
+
+  <!-- ── FoldPair ────────────────────────────────────────────────────── -->
+  <CDDefinition>
+    <Name>FoldPair</Name>
+    <Description>
+      FoldPair(S) = ⟨ M_{Y,X}, C_{Y,X}^T ⟩
+
+      Returns a logical pair of accumulation matrices over the shared
+      semantic axis X ∈ S. The pair is a semantic contract, not a
+      physical memory layout.
+
+      Arguments:
+        S  — semantic position set (the X axis; fixed by the topology map)
+
+      Result members:
+        M_{Y,X}     — forward (membership) co-occurrence mass matrix:
+                      M[Y][X] += 1  if Y ∈ C_X,  else 0.
+                      NOT the WCR runtime selection weight W_Y (static_weight).
+        C_{Y,X}^T  — reverse (traversal) matrix, transposed:
+                      C[Y][X] += 1  for each Y ∈ C_X
+
+      Shared axis:  X  (both members indexed over the same S)
+
+      Physical lowering to [ M ; C^T ] is optional and backend-chosen.
+      This symbol asserts only the logical pair.
+    </Description>
+    <property>
+      <description>Shared-axis constraint: no pattern inflation</description>
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <eq/>
+          <!-- |supp M[Y,·]| -->
+          <apply>
+            <card/>
+            <apply>
+              <csymbol cd="urn:kuhul:fold-graph:v1">supp</csymbol>
+              <apply><selector/><ci>M</ci><ci>Y</ci></apply>
+            </apply>
+          </apply>
+          <!-- #{X ∈ S : Y ∈ C_X} -->
+          <apply>
+            <card/>
+            <apply>
+              <csymbol cd="urn:kuhul:fold-graph:v1">setbuilder</csymbol>
+              <ci>X</ci>
+              <apply><in/><ci>X</ci><ci>S</ci></apply>
+              <apply>
+                <in/><ci>Y</ci>
+                <apply><selector/><ci>C</ci><ci>X</ci></apply>
+              </apply>
+            </apply>
+          </apply>
+        </apply>
+      </math>
+    </property>
+    <property>
+      <description>FoldPair does not lower to a concatenated matrix. Physical backends may choose [M; C^T] but this symbol does not assert it.</description>
+    </property>
+    <property>
+      <description>Direction asymmetry is intentional: M uses membership test (indicator); C uses traversal (double quantifier). Both are correct update rules for the same underlying data.</description>
+    </property>
+  </CDDefinition>
+
+  <!-- ── FoldPairLower ────────────────────────────────────────────────── -->
+  <CDDefinition>
+    <Name>FoldPairLower</Name>
+    <Description>
+      FoldPairLower( FoldPair(S) ) = [ M ; C^T ]
+
+      Optional physical lowering of a FoldPair to a contiguous stacked
+      matrix. May only be applied when the physical backend requires
+      vertical concatenation. Storage dimensions: (2·|Y|) × |X|.
+
+      This symbol is non-normative with respect to the semantic contract.
+      The semantic contract is FoldPair; FoldPairLower is a projection.
+    </Description>
+    <property>
+      <description>semantic contract ≠ physical representation (fold_graph.xml law: representation-is-provider)</description>
+    </property>
+  </CDDefinition>
+
+  <!-- ── Axis ─────────────────────────────────────────────────────────── -->
+  <CDDefinition>
+    <Name>Axis</Name>
+    <Description>
+      Axis(name, set) declares a named semantic axis indexed over a set.
+      Used to assert that two matrices share a coordinate system without
+      implying physical adjacency.
+
+      Example: Axis("X", S) declares that both M_{Y,X} and C_{Y,X}
+      are indexed by the same position set S.
+    </Description>
+  </CDDefinition>
+
+  <!-- ── supp (support) ───────────────────────────────────────────────── -->
+  <CDDefinition>
+    <Name>supp</Name>
+    <Description>
+      supp(v) — support of a vector v: the set of indices at which v is nonzero.
+      Used in the no-pattern-inflation property of FoldPair: |supp M[Y,·]| = #{X ∈ S : Y ∈ C_X}.
+    </Description>
+  </CDDefinition>
+
+  <!-- ── setbuilder ───────────────────────────────────────────────────── -->
+  <CDDefinition>
+    <Name>setbuilder</Name>
+    <Description>
+      setbuilder(x, domain_condition, filter_condition) — set-builder notation:
+      { x | domain_condition AND filter_condition }.
+      Used to express #{X ∈ S : Y ∈ C_X} in the shared-axis constraint.
+    </Description>
+  </CDDefinition>
+
+</CD>

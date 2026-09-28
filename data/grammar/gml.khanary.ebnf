@@ -1,0 +1,121 @@
+(* KHANARY GML Grammar — gml.khanary.ebnf
+   Dialect: standard GML extended with geodesic vector coordinates,
+   WCR weight fields (confidence, static_weight, health), and KHANARY
+   typed relation verbs on edges.
+   Parser: src/world/gml_parser.cpp
+   Consumer: src/world/field_dag.cpp (overlay node/edge builder)
+   Generated overlay ID convention: @node:gml:{file_stem}:{int_id}
+     where file_stem = filename without extension, lowercased,
+     non-alnum chars replaced with '_'. *)
+
+(* ── Top level ─────────────────────────────────────────────────────────── *)
+
+gml_file    = graph_block ;
+graph_block = "graph", "[", graph_body, "]" ;
+graph_body  = { graph_attr | node_block | edge_block } ;
+
+(* ── Graph-level attributes ─────────────────────────────────────────────── *)
+
+graph_attr =
+    "directed" , integer        (* 0 = undirected (default), 1 = directed *)
+  | "id"       , integer        (* optional graph identity *)
+  | "label"    , string         (* optional display label *)
+  | "comment"  , string         (* free-text annotation; NOT a line-comment syntax *)
+  | ident      , value          (* unknown attributes are silently accepted *)
+  ;
+
+(* ── Node block ─────────────────────────────────────────────────────────── *)
+
+node_block = "node", "[", node_body, "]" ;
+node_body  = { node_attr } ;
+
+node_attr  =
+    "id"            , integer   (* required; unique within file *)
+  | "label"         , string    (* display name; used when binding to KHANARY micronaut *)
+  | "x"             , number    (* geodesic vector x-coordinate *)
+  | "y"             , number    (* geodesic vector y-coordinate *)
+  | "z"             , number    (* geodesic vector z-coordinate *)
+  | "confidence"    , number    (* WCR C — epistemic confidence; range [0,1]; default 1.0 *)
+  | "static_weight" , number    (* WCR W — structural weight; range [0,1]; default 1.0 *)
+  | "health"        , number    (* node health; range [0,1]; default 1.0 *)
+  | ident           , value     (* unknown node attributes are silently accepted *)
+  ;
+
+(* ── Edge block ─────────────────────────────────────────────────────────── *)
+
+edge_block = "edge", "[", edge_body, "]" ;
+edge_body  = { edge_attr } ;
+
+edge_attr  =
+    "source"   , integer        (* required; id of origin node *)
+  | "target"   , integer        (* required; id of destination node *)
+  | "label"    , string         (* display label; defaults to verb value if omitted *)
+  | "verb"     , relation_verb  (* KHANARY relation verb; preferred *)
+  | "relation" , relation_verb  (* alias for verb; used only when verb is absent *)
+  | "weight"   , number         (* edge weight; default 1.0 *)
+  | ident      , value          (* unknown edge attributes are silently accepted *)
+  ;
+
+(* ── KHANARY relation verbs ─────────────────────────────────────────────── *)
+(* Canonical verbs from src/micronaut/relation_isa.h.
+   Non-canonical strings are resolved via infer_relation_from_lexical(). *)
+
+relation_verb =
+    "@related_to"
+  | "@delegates_to"
+  | "@requires"
+  | "@part_of"
+  | "@defines"
+  | "@is_a"
+  | "@causes"
+  | "@contradicts"
+  | "@has_part"
+  | "@has_property"
+  | "@possesses"
+  | "@value"
+  | "@imports"
+  | "@calls"
+  | "@exposes"
+  | string    (* non-canonical; resolved via infer_relation_from_lexical() *)
+  ;
+
+(* ── Overlay ID convention ──────────────────────────────────────────────── *)
+(* field_dag.cpp generates one overlay FieldNode per GML node.
+   IDs are namespaced by file stem to prevent cross-file collisions.
+   Bug history: bare @node:gml:{int_id} caused ambiguous vector_meta
+   when multiple GML files shared the same integer IDs. Fixed: field_dag.cpp:29. *)
+
+gml_overlay_id = "@node:gml:", file_stem, ":", integer ;
+file_stem      = ident ;   (* derived from filename: lowercase, non-alnum → '_' *)
+
+(* ── Value types ────────────────────────────────────────────────────────── *)
+
+value  = integer | float | string | block ;
+block  = "[", { ident, value }, "]" ;  (* generic nested block; key order is not significant *)
+
+number  = float | integer ;
+float   = [ sign ], digits, ".", { digit }, [ exponent ]
+        | [ sign ], digits, exponent
+        ;
+integer = [ sign ], digits ;
+sign    = "+" | "-" ;
+exponent = ( "e" | "E" ), [ sign ], digits ;
+digits  = digit, { digit } ;
+digit   = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+
+string      = '"', { string_char }, '"' ;
+string_char =
+    ? any UTF-8 character except '"' and '\' ?
+  | '\', escape_seq
+  ;
+escape_seq  = '"' | '\' | "n" | "t" | ? any other char — passed through literally ? ;
+
+ident  = ( letter | "_" ), { letter | digit | "_" } ;
+letter = ? ASCII letter a-z or A-Z ? ;
+
+(* ── Lexer behaviour ────────────────────────────────────────────────────── *)
+(* Whitespace (space, tab, newline, CR) is insignificant and skipped.
+   There is no line-comment syntax (# or //). The "comment" key is a string
+   attribute, not lexer-level syntax.
+   Unknown characters outside a string are silently skipped.
+   Key-value order within a block is not significant. *)

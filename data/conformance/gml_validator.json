@@ -1,0 +1,94 @@
+[
+  {"id":"minimal_valid",
+   "gml":"graph [ node [ id 0 label \"A\" ] node [ id 1 label \"B\" ] edge [ source 0 target 1 verb \"@related_to\" ] ]",
+   "grade":"VALID","errors":[],"warnings":[]},
+
+  {"id":"wcr_fields_valid",
+   "gml":"graph [ node [ id 0 confidence 0.0 static_weight 1.0 health 0.5 ] ]",
+   "grade":"VALID","errors":[],"warnings":[]},
+
+  {"id":"geometry_complete",
+   "gml":"graph [ node [ id 0 x 0.5 y 0.25 z 0.75 ] ]",
+   "grade":"VALID","errors":[],"warnings":[]},
+
+  {"id":"no_verb_no_relation",
+   "gml":"graph [ node [ id 0 ] node [ id 1 ] edge [ source 0 target 1 ] ]",
+   "grade":"VALID","errors":[],"warnings":[]},
+
+  {"id":"all_canonical_verbs",
+   "gml":"graph [ node [ id 0 ] node [ id 1 ] node [ id 2 ] edge [ source 0 target 1 verb \"@is_a\" ] edge [ source 1 target 2 verb \"@causes\" ] edge [ source 0 target 2 verb \"@requires\" ] ]",
+   "grade":"VALID","errors":[],"warnings":[]},
+
+  {"id":"directed_graph",
+   "gml":"graph [ directed 1 node [ id 0 ] node [ id 1 ] edge [ source 0 target 1 verb \"@delegates_to\" ] ]",
+   "grade":"VALID","errors":[],"warnings":[]},
+
+  {"id":"both_verb_and_relation",
+   "gml":"graph [ node [ id 0 ] node [ id 1 ] edge [ source 0 target 1 verb \"@related_to\" relation \"@is_a\" ] ]",
+   "grade":"VALID","errors":[],"warnings":["BOTH_VERB_AND_RELATION_PRESENT"]},
+
+  {"id":"relation_only",
+   "gml":"graph [ node [ id 0 ] node [ id 1 ] edge [ source 0 target 1 relation \"@related_to\" ] ]",
+   "grade":"VALID","errors":[],"warnings":["RELATION_ALIAS_USED"]},
+
+  {"id":"non_canonical_verb",
+   "gml":"graph [ node [ id 0 ] node [ id 1 ] edge [ source 0 target 1 verb \"associates_with\" ] ]",
+   "grade":"VALID","errors":[],"warnings":["INFER_CANDIDATE_USED"]},
+
+  {"id":"near_miss_verb",
+   "gml":"graph [ node [ id 0 ] node [ id 1 ] edge [ source 0 target 1 verb \"@relateed_to\" ] ]",
+   "grade":"VALID","errors":[],"warnings":["INFER_CANDIDATE_USED","NEAR_MISS_VERB"]},
+
+  {"id":"partial_coordinate_vector",
+   "gml":"graph [ node [ id 0 x 1.0 y 2.0 ] ]",
+   "grade":"VALID","errors":[],"warnings":["PARTIAL_COORDINATE_VECTOR"]},
+
+  {"id":"missing_node_id",
+   "gml":"graph [ node [ label \"A\" ] ]",
+   "grade":"PARSED","errors":["MISSING_NODE_ID"],"warnings":[]},
+
+  {"id":"duplicate_node_id",
+   "gml":"graph [ node [ id 0 ] node [ id 0 ] ]",
+   "grade":"PARSED","errors":["DUPLICATE_NODE_ID"],"warnings":[]},
+
+  {"id":"missing_source",
+   "gml":"graph [ node [ id 0 ] edge [ target 0 ] ]",
+   "grade":"PARSED","errors":["MISSING_EDGE_ENDPOINT"],"warnings":[]},
+
+  {"id":"missing_target",
+   "gml":"graph [ node [ id 0 ] edge [ source 0 ] ]",
+   "grade":"PARSED","errors":["MISSING_EDGE_ENDPOINT"],"warnings":[]},
+
+  {"id":"invalid_source_id",
+   "gml":"graph [ node [ id 0 ] edge [ source 99 target 0 ] ]",
+   "grade":"PARSED","errors":["INVALID_EDGE_ENDPOINT"],"warnings":[]},
+
+  {"id":"invalid_target_id",
+   "gml":"graph [ node [ id 0 ] edge [ source 0 target 99 ] ]",
+   "grade":"PARSED","errors":["INVALID_EDGE_ENDPOINT"],"warnings":[]},
+
+  {"id":"confidence_over_1",
+   "gml":"graph [ node [ id 0 confidence 1.5 ] ]",
+   "grade":"PARSED","errors":["CONFIDENCE_OUT_OF_RANGE"],"warnings":[]},
+
+  {"id":"confidence_negative",
+   "gml":"graph [ node [ id 0 confidence -0.1 ] ]",
+   "grade":"PARSED","errors":["CONFIDENCE_OUT_OF_RANGE"],"warnings":[]},
+
+  {"id":"static_weight_over_1",
+   "gml":"graph [ node [ id 0 static_weight 2.0 ] ]",
+   "grade":"PARSED","errors":["STATIC_WEIGHT_OUT_OF_RANGE"],"warnings":[]},
+
+  {"id":"health_negative",
+   "gml":"graph [ node [ id 0 health -1.0 ] ]",
+   "grade":"PARSED","errors":["HEALTH_OUT_OF_RANGE"],"warnings":[]},
+
+  {"id":"edge_weight_over_1",
+   "gml":"graph [ node [ id 0 ] node [ id 1 ] edge [ source 0 target 1 weight 3.0 ] ]",
+   "grade":"PARSED","errors":["EDGE_WEIGHT_OUT_OF_RANGE"],"warnings":[]},
+
+  {"id":"stem_digit",
+   "gml":"graph [ node [ id 0 ] ]",
+   "stem":"123_topology",
+   "grade":"PARSED","errors":["STEM_STARTS_WITH_DIGIT"],"warnings":[]}
+]
